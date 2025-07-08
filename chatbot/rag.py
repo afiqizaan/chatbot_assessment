@@ -32,7 +32,7 @@ class EnhancedProductRAG:
         if openai_key:
             try:
                 self.embeddings = AzureOpenAIEmbeddings(
-                    azure_deployment=openai_embedding_deployment_name,
+                    azure_deployment=os.getenv("OPENAI_EMBEDDING_DEPLOYMENT_NAME"),
                     model="text-embedding-ada-002",  # or your Azure embedding model name
                     openai_api_type=openai_api_type,
                 )
