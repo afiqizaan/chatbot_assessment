@@ -2,7 +2,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings
 
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 # Set your OpenAI key
 openai_key = os.getenv("OPENAI_API_KEY")
+openai_base = os.getenv("OPENAI_API_BASE")
+openai_api_type = os.getenv("OPENAI_API_TYPE", "azure")
+openai_api_version = os.getenv("OPENAI_API_VERSION")
+openai_deployment_name = os.getenv("OPENAI_DEPLOYMENT_NAME")
+openai_embedding_deployment_name = os.getenv("OPENAI_EMBEDDING_DEPLOYMENT_NAME")
 
 class EnhancedProductRAG:
     def __init__(self, data_file: str = "data/products/zus_drinkware.txt"):
@@ -26,8 +31,16 @@ class EnhancedProductRAG:
         # Initialize OpenAI components only if API key is available
         if openai_key:
             try:
-                self.embeddings = OpenAIEmbeddings()
-                self.openai_client = OpenAI(api_key=openai_key)
+                self.embeddings = AzureOpenAIEmbeddings(
+                    azure_deployment=openai_embedding_deployment_name,
+                    model="text-embedding-ada-002",  # or your Azure embedding model name
+                    openai_api_type=openai_api_type,
+                )
+                self.openai_client = OpenAI(
+                    api_key=openai_key,
+                    base_url=openai_base,
+                    default_headers={"api-key": openai_key}
+                )
                 self.load_products_index()
             except Exception as e:
                 logger.warning(f"Could not initialize OpenAI components: {e}")
@@ -100,8 +113,9 @@ class EnhancedProductRAG:
             """
             
             # Generate summary using OpenAI API
+            model_name = openai_deployment_name or "gpt-35-turbo"  # fallback if not set
             response = self.openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=model_name,  # Use Azure deployment name
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1
             )
