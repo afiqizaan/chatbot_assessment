@@ -2,53 +2,33 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_openai import AzureOpenAIEmbeddings
-
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
-from openai import OpenAI
+from pydantic import SecretStr
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Set your OpenAI key
-openai_key = os.getenv("OPENAI_API_KEY")
-openai_base = os.getenv("OPENAI_API_BASE")
-openai_api_type = os.getenv("OPENAI_API_TYPE", "azure")
-openai_api_version = os.getenv("OPENAI_API_VERSION")
-openai_deployment_name = os.getenv("OPENAI_DEPLOYMENT_NAME")
-openai_embedding_deployment_name = os.getenv("OPENAI_EMBEDDING_DEPLOYMENT_NAME")
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key or not isinstance(api_key, str):
+    raise EnvironmentError("Missing required environment variable: GEMINI_API_KEY")
 
 class EnhancedProductRAG:
     def __init__(self, data_file: str = "data/products/zus_drinkware.txt"):
         self.data_file = data_file
-        self.embeddings = None
-        self.openai_client = None
+        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            api_key=SecretStr(str(api_key)),
+            temperature=0.7
+        )
         self.vectorstore = None
-        
-        # Initialize OpenAI components only if API key is available
-        if openai_key:
-            try:
-                self.embeddings = AzureOpenAIEmbeddings(
-                    azure_deployment=os.getenv("OPENAI_EMBEDDING_DEPLOYMENT_NAME"),
-                    model="text-embedding-ada-002",  # or your Azure embedding model name
-                    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                )
-                self.openai_client = OpenAI(
-                    api_key=openai_key,
-                    base_url=openai_base,
-                    default_headers={"api-key": openai_key}
-                )
-                self.load_products_index()
-            except Exception as e:
-                logger.warning(f"Could not initialize OpenAI components: {e}")
-                self.embeddings = None
-                self.openai_client = None
-        else:
-            logger.warning("OpenAI API key not found. RAG system will use fallback mode.")
-    
+        self.load_products_index()
+
     def load_products_index(self):
         """Load and index product data into vector store"""
         try:
@@ -92,11 +72,6 @@ class EnhancedProductRAG:
             if not search_results:
                 return "Sorry, I couldn't find any products matching your query."
             
-            # If OpenAI is not available, fall back to simple concatenation
-            if not self.openai_client:
-                logger.warning("OpenAI client not available. Using fallback summary.")
-                return "Here's what I found:\n\n" + "\n\n".join([doc.page_content for doc in search_results])
-            
             # Prepare context from search results
             context = "\n\n".join([doc.page_content for doc in search_results])
             
@@ -112,15 +87,16 @@ class EnhancedProductRAG:
             Make it conversational and helpful for a customer.
             """
             
-            # Generate summary using OpenAI API
-            model_name = openai_deployment_name or "gpt-35-turbo"  # fallback if not set
-            response = self.openai_client.chat.completions.create(
-                model=model_name,  # Use Azure deployment name
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1
-            )
-            content = response.choices[0].message.content
-            return content if content else "Sorry, I couldn't generate a summary at the moment."
+            # Generate summary
+            response = self.llm.invoke(prompt)
+            if hasattr(response, 'content'):
+                return str(response.content)
+            elif isinstance(response, str):
+                return response
+            elif isinstance(response, list):
+                return "\n".join(str(item) for item in response)
+            else:
+                return str(response)
             
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
