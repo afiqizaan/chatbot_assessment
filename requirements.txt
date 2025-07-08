@@ -4,6 +4,7 @@ langchain
 langchain_community
 google-generativeai
 langchain-google-genai
+langchain-huggingface
 sentence-transformers
 faiss-cpu
 sqlalchemy

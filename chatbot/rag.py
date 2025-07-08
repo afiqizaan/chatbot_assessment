@@ -2,8 +2,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
@@ -20,7 +19,10 @@ if not api_key or not isinstance(api_key, str):
 class EnhancedProductRAG:
     def __init__(self, data_file: str = "data/products/zus_drinkware.txt"):
         self.data_file = data_file
-        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        self.embeddings = GoogleGenerativeAIEmbeddings(
+            model="embedding-001",
+            google_api_key=SecretStr(str(api_key)),
+        )
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             api_key=SecretStr(str(api_key)),
