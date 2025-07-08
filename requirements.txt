@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+langchain-openai
+openai
+faiss-cpu
+sqlalchemy
+httpx
+pytest
+python-dotenv
+tiktoken
