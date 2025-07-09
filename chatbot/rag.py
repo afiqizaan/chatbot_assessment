@@ -20,7 +20,7 @@ class EnhancedProductRAG:
     def __init__(self, data_file: str = "data/products/zus_drinkware.txt"):
         self.data_file = data_file
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="embedding-001",
+            model="gemini-embedding-exp-03-07",
             google_api_key=SecretStr(str(api_key)),
         )
         self.llm = ChatGoogleGenerativeAI(
