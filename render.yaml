@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: zus-coffee-chatbot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true 
