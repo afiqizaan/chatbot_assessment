@@ -203,7 +203,7 @@ class EnhancedChatbotAgent:
             # Call calculator API with enhanced error handling
             try:
                 response = httpx.get(
-                    "http://127.0.0.1:8000/calc", 
+                    "/calc", 
                     params={"a": a, "b": b, "op": op}, 
                     timeout=5.0
                 )

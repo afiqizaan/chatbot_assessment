@@ -4,7 +4,7 @@
 This project is a robust, production-ready multi-turn conversational AI chatbot. It features:
 - State management and context awareness
 - Agentic planning and tool integration
-- Retrieval-augmented generation (RAG) for product search
+- Retrieval-augmented generation (RAG) for product search using Google Gemini
 - Custom API endpoints (FastAPI)
 - Robust error handling and security
 
@@ -13,7 +13,7 @@ This project is a robust, production-ready multi-turn conversational AI chatbot.
 ### **Architecture**
 - **Entrypoint:** `main.py` (FastAPI app)
 - **Chatbot Logic:** `chatbot/agent.py` (stateful, multi-turn agent)
-- **RAG System:** `chatbot/rag.py` (FAISS + OpenAI embeddings)
+- **RAG System:** `chatbot/rag.py` (FAISS + Google Gemini embeddings)
 - **Calculator Tool:** `chatbot/calculator.py` (arithmetic API)
 - **Outlet Database:** `database/outlets_db.py` (SQLite + Text2SQL)
 - **Data Ingestion:** `scripts/ingest_outlets.py`, `scripts/ingest_products.py`
@@ -25,7 +25,7 @@ This project is a robust, production-ready multi-turn conversational AI chatbot.
   - Modular code for easy extension (add new tools, endpoints, or data sources)
   - Single FastAPI app for all endpoints (simple, but can be split for microservices)
 - **Performance vs. Cost:**
-  - Uses OpenAI embeddings for RAG (high quality, but requires API key/quota)
+  - Uses Google Gemini embeddings for RAG (high quality, requires API key)
   - FAISS for fast local vector search
 - **Security vs. Usability:**
   - Strong input validation and error handling
@@ -51,10 +51,10 @@ pip install -r requirements.txt
 ```
 
 ### 2. **Set Environment Variables**
-You need an OpenAI API key for product search (RAG):
+You need a Google Gemini API key for product search (RAG):
 ```sh
 # In your shell or .env file
-export OPENAI_API_KEY=sk-...
+export GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ### 3. **Ingest Data**
@@ -82,7 +82,7 @@ chatbot_assessment/
 ├── main.py                  # FastAPI entrypoint
 ├── chatbot/
 │   ├── agent.py             # Main chatbot agent
-│   ├── rag.py               # RAG system (FAISS + OpenAI)
+│   ├── rag.py               # RAG system (FAISS + Google Gemini)
 │   └── calculator.py        # Calculator tool
 ├── database/
 │   └── outlets_db.py        # Outlets DB + Text2SQL
@@ -117,7 +117,32 @@ See `/docs` for full API details and try out requests interactively.
 
 ---
 
+## 🚀 **Deployment Options**
+
+### **Render.com**
+- Free tier available
+- Automatic deployments from GitHub
+- May have memory limitations on free tier
+
+### **Railway.app**
+- $5/month credit (very generous)
+- No sleep issues, better performance
+- Recommended for reliable demos
+
+### **Replit**
+- Free tier available
+- Instant deployment and sharing
+- Built-in IDE for easy collaboration
+
+### **Fly.io**
+- Free tier: 3 shared-cpu VMs
+- Good performance, global deployment
+- More complex setup but very reliable
+
+---
+
 ## 📝 **Notes**
-- For public demo, deploy to Render, Hugging Face Spaces, or Replit (see docs for details).
-- For best results, ensure your OpenAI API key has quota.
-- All code is modular and ready for extension or production deployment.
+- For public demo, deploy to Render, Railway, Replit, or Fly.io
+- For best results, ensure your Gemini API key has quota
+- All code is modular and ready for extension or production deployment
+- Uses Google Gemini 2.0 Flash for chat and embedding-001 for embeddings

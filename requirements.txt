@@ -1,14 +1,8 @@
 fastapi
 uvicorn
-langchain
-langchain_community
-google-generativeai
 langchain-google-genai
-langchain-huggingface
-sentence-transformers
+google-generativeai
 faiss-cpu
 sqlalchemy
 httpx
-pytest
 python-dotenv
-tiktoken
