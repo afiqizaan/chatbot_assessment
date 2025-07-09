@@ -64,15 +64,27 @@ class EnhancedChatbotAgent:
     
     def __init__(self):
         self.memory = ConversationMemory()
+        # Expand outlet data with more outlets and locations
         self.outlet_data = {
             "SS 2": {"opening_time": "9:00AM", "location": "Petaling Jaya"},
             "Damansara": {"opening_time": "8:30AM", "location": "Petaling Jaya"},
             "Bukit Bintang": {"opening_time": "10:00AM", "location": "Kuala Lumpur"},
             "Subang": {"opening_time": "9:30AM", "location": "Subang"},
-            "Puchong": {"opening_time": "8:00AM", "location": "Puchong"}
+            "Puchong": {"opening_time": "8:00AM", "location": "Puchong"},
+            "KLCC": {"opening_time": "9:00AM", "location": "Kuala Lumpur"},
+            "Mid Valley": {"opening_time": "9:30AM", "location": "Kuala Lumpur"},
+            "IOI Mall": {"opening_time": "10:00AM", "location": "Puchong"},
+            "1 Utama": {"opening_time": "8:30AM", "location": "Petaling Jaya"},
+            "Damansara Uptown": {"opening_time": "8:00AM", "location": "Petaling Jaya"},
+            "Bangsar": {"opening_time": "10:00AM", "location": "Kuala Lumpur"},
         }
-        self.supported_locations = ["petaling jaya", "kl", "kuala lumpur", "subang", "puchong"]
-        self.supported_outlets = ["ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong"]
+        self.supported_locations = [
+            "petaling jaya", "kl", "kuala lumpur", "subang", "puchong", "bangsar", "damansara uptown"
+        ]
+        self.supported_outlets = [
+            "ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong",
+            "1 utama", "one utama", "klcc", "mid valley", "ioi mall", "damansara uptown", "bangsar"
+        ]
         
     def detect_intent(self, query: str) -> Tuple[Intent, float]:
         """
@@ -107,7 +119,7 @@ class EnhancedChatbotAgent:
             intent_scores[Intent.GREETING] = 0.9
         
         # Check for outlet names (SS 2, Damansara, etc.) - these indicate time inquiry
-        outlet_names = ["ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong"]
+        outlet_names = ["ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong", "klcc", "mid valley", "ioi mall", "1 utama"]
         if any(outlet in query_lower for outlet in outlet_names):
             intent_scores[Intent.TIME_INQUIRY] = 0.9
         
@@ -167,7 +179,7 @@ class EnhancedChatbotAgent:
         elif intent == Intent.TIME_INQUIRY and "outlet" not in entities:
             # Check if query contains outlet names
             query_lower = entities.get("_query", "").lower()
-            outlet_names = ["ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong"]
+            outlet_names = ["ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong", "klcc", "mid valley", "ioi mall", "1 utama"]
             for outlet in outlet_names:
                 if outlet in query_lower:
                     self.memory.outlet = outlet
@@ -223,7 +235,6 @@ class EnhancedChatbotAgent:
         try:
             # Import here to avoid circular imports
             from database.outlets_db import text2sql
-            
             if "location" in entities:
                 location = entities["location"]
                 self.memory.location = location
@@ -253,17 +264,14 @@ class EnhancedChatbotAgent:
             # Import here to avoid circular imports
             from database.outlets_db import text2sql
             
-            # Check if outlet is provided in current query
             if "outlet" in entities:
                 outlet = entities["outlet"]
                 self.memory.outlet = outlet
                 self.memory.current_state = ConversationState.OUTLET_CONFIRMED
             
-            # Use outlet from memory if not in current query
             outlet = self.memory.outlet or entities.get("outlet")
             
             if outlet:
-                # Query the database for outlet information
                 query = f"opening hours for {outlet} outlet"
                 results = text2sql.query_outlets(query)
                 
@@ -285,24 +293,27 @@ class EnhancedChatbotAgent:
         Normalize outlet names for consistent matching
         """
         outlet_lower = outlet.lower()
-        if outlet_lower in ["ss 2", "ss2"]:
-            return "SS 2"
-        elif outlet_lower == "damansara":
-            return "Damansara"
-        elif outlet_lower == "bukit bintang":
-            return "Bukit Bintang"
-        elif outlet_lower == "subang":
-            return "Subang"
-        elif outlet_lower == "puchong":
-            return "Puchong"
-        return outlet.title()
+        # Add more outlet mappings here for normalization
+        outlet_mappings = {
+            "ss 2": "SS 2",
+            "damansara": "Damansara",
+            "bukit bintang": "Bukit Bintang",
+            "subang": "Subang",
+            "puchong": "Puchong",
+            "1 utama": "1 Utama",
+            "klcc": "KLCC",
+            "mid valley": "Mid Valley",
+            "ioi mall": "IOI Mall Puchong",
+            "damansara uptown": "Damansara Uptown",
+            "bangsar": "Bangsar"
+        }
+        return outlet_mappings.get(outlet_lower, outlet.title())
     
     def handle_product_search(self, query: str) -> str:
         """
         Handle product search using enhanced RAG system
         """
         try:
-            # Import here to avoid circular imports
             from chatbot.rag import enhanced_rag
             return enhanced_rag.query_products(query)
         except Exception as e:
@@ -320,7 +331,6 @@ class EnhancedChatbotAgent:
         Main response handler with comprehensive error handling and state management
         """
         try:
-            # Input validation
             if not query or not query.strip():
                 return "I didn't catch that. Could you please repeat your question?"
             
@@ -364,4 +374,4 @@ class EnhancedChatbotAgent:
         """
         Reset conversation state
         """
-        self.memory.reset() 
+        self.memory.reset()
