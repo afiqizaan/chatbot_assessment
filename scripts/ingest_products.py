@@ -12,7 +12,7 @@ from pathlib import Path
 # Add the parent directory to the path so we can import our modules
 sys.path.append(str(Path(__file__).parent.parent))
 
-from chatbot.enhanced_rag import EnhancedProductRAG
+from chatbot.rag import EnhancedProductRAG
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
