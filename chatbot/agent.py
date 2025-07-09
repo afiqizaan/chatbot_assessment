@@ -97,9 +97,9 @@ class EnhancedChatbotAgent:
             intent_scores[Intent.OUTLET_INQUIRY] = 0.85
         
         # Product search
-        product_keywords = ["product", "item", "buy", "price", "available"]
+        product_keywords = ["product", "item", "buy", "price", "available", "show me", "coffee", "cup", "mug", "drinkware"]
         if any(keyword in query_lower for keyword in product_keywords):
-            intent_scores[Intent.PRODUCT_SEARCH] = 0.7
+            intent_scores[Intent.PRODUCT_SEARCH] = 0.8
         
         # Greeting
         greeting_keywords = ["hello", "hi", "hey", "good morning", "good afternoon"]
@@ -200,31 +200,14 @@ class EnhancedChatbotAgent:
             else:
                 return "I couldn't understand the operation. Try 'add', 'subtract', 'multiply', or 'divide'."
             
-            # Call calculator API with enhanced error handling
+            # Use the local calculator function instead of API call
             try:
-                response = httpx.get(
-                    "/calc", 
-                    params={"a": a, "b": b, "op": op}, 
-                    timeout=5.0
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()["result"]
-                    return f"The answer is {result}."
-                else:
-                    error_msg = response.json().get("detail", "Calculation service error")
-                    logger.error(f"Calculator API error: {error_msg}")
-                    return f"Sorry, I couldn't calculate that: {error_msg}"
-                    
-            except httpx.TimeoutException:
-                logger.warning("Calculator API timeout")
-                return "Sorry, the calculation is taking too long. Please try again."
-            except httpx.RequestError as e:
-                logger.error(f"Calculator API request error: {e}")
-                return "Sorry, the calculator service is currently unavailable."
+                from chatbot.calculator import calculate
+                result = calculate(a, b, op)
+                return f"The answer is {result}."
             except Exception as e:
-                logger.error(f"Unexpected error in calculation: {e}")
-                return "Something went wrong during calculation. Please try again."
+                logger.error(f"Calculator error: {e}")
+                return "Sorry, I couldn't calculate that. Please try again."
                 
         except ValueError as e:
             logger.error(f"Value error in calculation: {e}")
@@ -237,49 +220,65 @@ class EnhancedChatbotAgent:
         """
         Handle outlet-related inquiries with state management
         """
-        if "location" in entities:
-            location = entities["location"]
-            self.memory.location = location
-            self.memory.current_state = ConversationState.LOCATION_CONFIRMED
+        try:
+            # Import here to avoid circular imports
+            from database.outlets_db import text2sql
             
-            # Get outlets for the location
-            available_outlets = [
-                outlet for outlet, data in self.outlet_data.items()
-                if data["location"].lower() == location
-            ]
+            if "location" in entities:
+                location = entities["location"]
+                self.memory.location = location
+                self.memory.current_state = ConversationState.LOCATION_CONFIRMED
+                
+                # Query the database for outlets in the location
+                query = f"outlets in {location}"
+                results = text2sql.query_outlets(query)
+                
+                if results:
+                    outlet_names = [outlet.get('name', 'Unknown') for outlet in results]
+                    outlet_list = ", ".join(outlet_names)
+                    return f"Yes! We have outlets in {location.title()}: {outlet_list}. Which one are you interested in?"
+                else:
+                    return f"I don't have information about outlets in {location.title()}. Please try another location."
             
-            if available_outlets:
-                outlet_list = ", ".join(available_outlets)
-                return f"Yes! We have outlets in {location.title()}: {outlet_list}. Which one are you interested in?"
-            else:
-                return f"I don't have information about outlets in {location.title()}. Please try another location."
-        
-        return "Which area are you interested in? We have outlets in Petaling Jaya, Kuala Lumpur, Subang, and Puchong."
+            return "Which area are you interested in? We have outlets in Petaling Jaya, Kuala Lumpur, Subang, and Puchong."
+        except Exception as e:
+            logger.error(f"Outlet inquiry error: {e}")
+            return "I'm having trouble accessing outlet information right now. Please try again later."
     
     def handle_time_inquiry(self, entities: Dict[str, Any]) -> str:
         """
         Handle time-related inquiries with state management
         """
-        # Check if outlet is provided in current query
-        if "outlet" in entities:
-            outlet = entities["outlet"]
-            self.memory.outlet = outlet
-            self.memory.current_state = ConversationState.OUTLET_CONFIRMED
-        
-        # Use outlet from memory if not in current query
-        outlet = self.memory.outlet or entities.get("outlet")
-        
-        if outlet:
-            # Normalize outlet name
-            outlet_normalized = self._normalize_outlet_name(outlet)
+        try:
+            # Import here to avoid circular imports
+            from database.outlets_db import text2sql
             
-            if outlet_normalized in self.outlet_data:
-                opening_time = self.outlet_data[outlet_normalized]["opening_time"]
-                return f"The {outlet_normalized} outlet opens at {opening_time}."
+            # Check if outlet is provided in current query
+            if "outlet" in entities:
+                outlet = entities["outlet"]
+                self.memory.outlet = outlet
+                self.memory.current_state = ConversationState.OUTLET_CONFIRMED
+            
+            # Use outlet from memory if not in current query
+            outlet = self.memory.outlet or entities.get("outlet")
+            
+            if outlet:
+                # Query the database for outlet information
+                query = f"opening hours for {outlet} outlet"
+                results = text2sql.query_outlets(query)
+                
+                if results:
+                    outlet_info = results[0]
+                    opening_hours = outlet_info.get('opening_hours', 'Not available')
+                    outlet_name = outlet_info.get('name', outlet)
+                    return f"The {outlet_name} outlet opening hours: {opening_hours}."
+                else:
+                    return f"I don't have information about the {outlet} outlet. Please specify a valid outlet."
             else:
-                return f"I don't have information about the {outlet} outlet. Please specify a valid outlet."
-        else:
-            return "Which outlet are you asking about? Please specify the outlet name."
+                return "Which outlet are you asking about? Please specify the outlet name."
+        except Exception as e:
+            logger.error(f"Time inquiry error: {e}")
+            return "I'm having trouble accessing outlet information right now. Please try again later."
     
     def _normalize_outlet_name(self, outlet: str) -> str:
         """
