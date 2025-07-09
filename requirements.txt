@@ -1,8 +1,10 @@
 fastapi
 uvicorn
 langchain-google-genai
+langchain_community
 google-generativeai
 faiss-cpu
 sqlalchemy
 httpx
 python-dotenv
+aiofiles

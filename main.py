@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import logging
@@ -140,6 +142,33 @@ async def calculator(
         return {"result": result, "operation": f"{a} {op} {b}"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Root Endpoint - Serve the web UI
+@app.get("/")
+async def root():
+    """Root endpoint - Serve the web UI"""
+    return FileResponse("static/index.html")
+
+# API Info Endpoint
+@app.get("/api")
+async def api_info():
+    """API information endpoint"""
+    return {
+        "message": "ZUS Coffee Chatbot API",
+        "version": "4.0.0",
+        "endpoints": {
+            "chat": "/chat",
+            "products": "/products",
+            "outlets": "/outlets",
+            "calculator": "/calc",
+            "health": "/health",
+            "docs": "/docs"
+        },
+        "description": "AI Chatbot with Product RAG, Text2SQL Outlets, and Calculator Integration"
+    }
 
 # Health Check Endpoint
 @app.get("/health")
