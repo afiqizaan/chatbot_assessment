@@ -72,9 +72,8 @@ class EnhancedProductRAG:
             Relevant Product Information:
             {context}
 
-            Please provide a helpful summary of the products that match the user's query. 
-            Include key details like product names, prices, colors, and features.
-            Make it conversational and helpful for a customer.
+            Summarize the matching products in 2-3 short sentences, focusing only on the most relevant product names and prices. 
+            Avoid markdown formatting. Respond in a friendly, concise, and easy-to-read style for a chatbot.
             """
             
             response = self.llm.invoke(prompt)

@@ -114,17 +114,11 @@ chatbot_assessment/
 
 ## 🚀 Deployment
 
-### **Render.com (Recommended)**
+### **Render.com**
 1. Connect your GitHub repository to Render
 2. Set environment variable: `GEMINI_API_KEY`
 3. Deploy automatically on push
 4. Get a public URL to share with others
-
-### **Other Platforms**
-- **Railway.app**: $5/month credit, excellent performance
-- **Replit**: Free tier with instant deployment
-- **Fly.io**: Free tier with global deployment
-- **Vercel**: Free tier (may have size limitations)
 
 ---
 
