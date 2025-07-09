@@ -73,8 +73,7 @@ class EnhancedChatbotAgent:
         }
         self.supported_locations = ["petaling jaya", "kl", "kuala lumpur", "subang", "puchong"]
         self.supported_outlets = [
-            "ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong",
-            "1 utama", "one utama", "klcc", "mid valley", "ioi mall"
+            "ss 2", "ss2", "damansara", "bukit bintang", "subang", "puchong", "1 utama", "klcc"
         ]
         
     def detect_intent(self, query: str) -> Tuple[Intent, float]:
@@ -284,9 +283,6 @@ class EnhancedChatbotAgent:
             return "I'm having trouble accessing outlet information right now. Please try again later."
     
     def _normalize_outlet_name(self, outlet: str) -> str:
-        """
-        Normalize outlet names for consistent matching
-        """
         outlet_lower = outlet.lower()
         if outlet_lower in ["ss 2", "ss2"]:
             return "SS 2"
@@ -302,10 +298,6 @@ class EnhancedChatbotAgent:
             return "1 Utama"
         elif outlet_lower == "klcc":
             return "KLCC"
-        elif outlet_lower == "mid valley":
-            return "Mid Valley"
-        elif outlet_lower == "ioi mall":
-            return "IOI Mall Puchong"
         return outlet.title()
     
     def handle_product_search(self, query: str) -> str:
@@ -375,4 +367,4 @@ class EnhancedChatbotAgent:
         """
         Reset conversation state
         """
-        self.memory.reset()
+        self.memory.reset() 
